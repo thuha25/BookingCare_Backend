@@ -196,7 +196,7 @@ let getDetailDoctorById = (inputId) => {
           data: data,
         });
         if (data && data.image) {
-          data.image = new Buffer(data.image, "base64").toString("binary");
+          data.image = Buffer.from(data.image, "base64").toString("binary");
         }
         if (!data) data = {};
       }
@@ -261,6 +261,11 @@ let getScheduleByDate = (doctorId, date) => {
               model: db.Allcode,
               as: "timeTypeData",
               attributes: ["valueEn", "valueVi"],
+            },
+            {
+              model: db.User,
+              as: "doctorData",
+              attributes: ["firstName", "lastName"],
             },
           ],
           raw: false,
@@ -374,7 +379,7 @@ let getProfileDoctorById = (inputId) => {
           nest: true,
         });
         if (data && data.image) {
-          data.image = new Buffer(data.image, "base64").toString("binary");
+          data.image = Buffer.from(data.image, "base64").toString("binary");
         }
         if (!data) data = {};
         resolve({
