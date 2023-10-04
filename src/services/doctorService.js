@@ -56,25 +56,42 @@ let getAllDoctors = () => {
     }
   });
 };
-
+let checkRequiredFields = (inputData) => {
+  let arrFields = [
+    "doctorId",
+    "contentHTML",
+    "contentMarkdown",
+    "action",
+    "selectedPrice",
+    "selectedPayment",
+    "selectedProvince",
+    "nameClinic",
+    "addressClinic",
+    "note",
+    "specialtyId",
+  ];
+  let isValid = true;
+  let element = "";
+  for (let i = 0; i < arrFields.length; i++) {
+    if (!inputData[arrFields[i]]) {
+      isValid = false;
+      element = arrFields[i];
+      break;
+    }
+  }
+  return {
+    isValid,
+    element,
+  };
+};
 let saveDetailInforDoctor = (inputData) => {
   return new Promise(async (resolve, reject) => {
     try {
-      if (
-        !inputData.doctorId ||
-        !inputData.contentHTML ||
-        !inputData.contentMarkdown ||
-        !inputData.action ||
-        !inputData.selectedPrice ||
-        !inputData.selectedPayment ||
-        !inputData.selectProvince ||
-        !inputData.nameClinic ||
-        !inputData.addressClinic ||
-        !inputData.note
-      ) {
+      let checkObj = checkRequiredFields(inputData);
+      if (checkObj.isValid === false) {
         resolve({
           errCode: 1,
-          errMessage: "Missing parameter",
+          errMessage: `Missing parameter" ${checkObj.element}`,
         });
       } else {
         //upsert to Markdown
@@ -106,12 +123,15 @@ let saveDetailInforDoctor = (inputData) => {
           //update
           doctorInfor.doctorId = inputData.doctorId;
           doctorInfor.priceId = inputData.selectedPrice;
-          doctorInfor.provinceId = inputData.selectProvince;
+          doctorInfor.provinceId = inputData.selectedProvince;
           doctorInfor.paymentId = inputData.selectedPayment;
 
           doctorInfor.nameClinic = inputData.nameClinic;
           doctorInfor.addressClinic = inputData.addressClinic;
           doctorInfor.note = inputData.note;
+          doctorInfor.specialtyId = inputData.specialtyId;
+          doctorInfor.clinicId = inputData.clinicId;
+
           await doctorInfor.save();
         } else {
           //create
@@ -122,11 +142,13 @@ let saveDetailInforDoctor = (inputData) => {
             paymentId: inputData.selectedPayment,
             nameClinic: inputData.nameClinic,
             priceId: inputData.selectedPrice,
-            provinceId: inputData.selectProvince,
+            provinceId: inputData.selectedProvince,
             paymentId: inputData.selectedPayment,
             nameClinic: inputData.nameClinic,
             addressClinic: inputData.addressClinic,
             note: inputData.note,
+            specialtyId: inputData.specialtyId,
+            clinicId: inputData.clinic,
           });
         }
 
@@ -392,6 +414,53 @@ let getProfileDoctorById = (inputId) => {
     }
   });
 };
+let getListPatientForDoctor = (doctorId, date) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      if (!doctorId || !date) {
+        resolve({
+          errCode: 1,
+          errMessage: "Missing required parameter",
+        });
+      } else {
+        let data = await db.Booking.findAll({
+          where: {
+            statusId: "S2",
+            doctorId: doctorId,
+            date: date,
+          },
+          include: [
+            {
+              model: db.User,
+              as: "patientData",
+              attributes: ["email", "firstName", "address", "gender"],
+              include: [
+                {
+                  model: db.Allcode,
+                  as: "genderData",
+                  attributes: ["valueEn", "valueVi"],
+                },
+              ],
+            },
+            {
+              model: db.Allcode,
+              as: "timeTypeDataPatient",
+              attributes: ["valueEn", "valueVi"],
+            },
+          ],
+          raw: false,
+          nest: true,
+        });
+        resolve({
+          errCode: 0,
+          data: data,
+        });
+      }
+    } catch (e) {
+      reject(e);
+    }
+  });
+};
 module.exports = {
   getTopDoctorHome,
   getAllDoctors,
@@ -401,4 +470,5 @@ module.exports = {
   getScheduleByDate,
   getExtraInforDoctorById,
   getProfileDoctorById,
+  getListPatientForDoctor,
 };
