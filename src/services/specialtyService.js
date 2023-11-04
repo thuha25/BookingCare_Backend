@@ -60,8 +60,7 @@ let getDetailSpecialtyById = (inputId, location) => {
           message: "Missing parameter",
         });
       } else {
-        let data = {};
-        data = await db.Specialty.findOne({
+        let data = await db.Specialty.findOne({
           where: {
             id: inputId,
           },
@@ -75,6 +74,7 @@ let getDetailSpecialtyById = (inputId, location) => {
               attributes: ["doctorId", "provinceId"],
             });
           } else {
+            //find by location
             doctorSpecialty = await db.Doctor_Infor.findAll({
               where: { specialtyId: inputId, provinceId: location },
               attributes: ["doctorId", "provinceId"],
